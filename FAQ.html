@@ -1,0 +1,240 @@
+<h1>MPEx FAQ</h1>
+
+Original can be found at <a href="http://mpex.co/faq.html">http://mpex.co/faq.html</a> by Mircea Popescu.
+
+<div style="float: right; padding:6px;">Last revision : February the 6th, 2013.</div>
+<h3><a href="#1" name="1">1.</a> <i>Dear Lord, what is this ?</i></h3><ul>
+
+Yes, this is dog.
+
+</ul><h3><a href="#2" name="2">2.</a> <i>What is an MPSIC ?</i></h3><ul>
+
+Short for Mircea Popescu Standard Identification Code. It's true that it's not very standard, but on the other hand it's very code-y, so it all evens out in the end. 
+
+</ul><h3><a href="#3" name="3">3.</a> <i>So how do I use this thing ?</i></h3><ul>
+
+First, you need to get registered. Export your public key (gpg --armor --output pubkey.txt --export 'Your Name') and <a href=http://polimedia.us/trilema/wp-content/uploads/office.jpg>email</a> it. Make sure you include the exact phrase "I understand that I will be required to pay 30 BTC as fees for registering this account, and I agree and promise to do so" or your email will be discarded unread. This is unfortunately necessary <a href=http://polimedia.us/trilema/2013/because-most-people-are-idiots-in-spite-of-never-manning-up-and-admitting-to-it/>because idiots</a>.  
+<br /><br />
+You will be thus added to the list of people who can deal on MPEx, and as soon as you are you'll be ready to issue new orders.
+<br /><br />
+If you wish you may encrypt your key first, use Mircea Popescu's key (gpg --encrypt --armor -r 2FB7B452 also gpg --search-keys "2FB7B452" if gpg complains about not having the key). This will ensure higher anonymity if it justifies the effort for you.
+<br /><br />
+If none of this makes any sense you might want to check out the <a href=http://www.gnupg.org/>gpg documentation</a>.
+
+</ul><h3><a href="#4" name="4">4.</a> <i>What orders are available ?</i></h3><ul>
+
+STAT, STATJSON, BUY, SELL, CANCEL, WITHDRAW, DEPOSIT, DIVIDEND, PUSH, SPLIT, MKOPT, MKFUT and EXERCISE so far.
+
+</ul><h3><a href="#5" name="5">5.</a> <i>Syntax ?</i></h3>
+
+<ul><li>STAT requests a human-readable account statement. The trade and dividend history returned start with the first transaction after a point in time one hour previous to the last STAT issued to that user. For active daytrading accounts it is advisable to run some form of STAT programatically once a day for bookkeeping purposes. Brokerage houses with lots of clients and lots of activity may consider doing it even more often. Low trade frequency investors are still advised to run STAT once a month. In all cases please keep your STAT receipts, they are issued to protect you.
+<br /><br />
+Due to the cuantic nature of the Universe and other causes, STAT results are not infinitely up to date. If a transaction is in the process of being executed or cleared your involved bid/ask may or may not appear in the STAT, your holdings may or may not reflect the new acquisition/sale and your history may or may not include the executing or clearing transaction. In general these transient states resolve in sub-second time.</li>
+<br /><li>STATJSON requests the same data in JSON format. </li>
+<br /><li>BUY|{MPSIC}|{quantity}|{price}|{expiry} or SELL|{MPSIC}|{quantity}|{price}|{expiry}. Replace curly braces with the actual intended values. MPSIC must be stated and be a valid MPSIC. Quantity must be stated and be a positive integer. Price may be absent in which case your order will be executed at market. If price is given it must be a positive integer (expressed in satoshi, there's 100000000 satoshi in 1 bitcoin - that's eight zeroes). Expiry may be absent in which case your order never expires, but if stated must be given in unixtime format (seconds since epoch) and be after current server time (you can verify this with a STAT).</li>
+<br /><li>CANCEL|{order id} (you get the order ids from a stat) will knock out the order from the book, returning you the shares/money in reserve there. Notice that CANCEL can not undo an already executed trade.</li>
+<br /><li>WITHDRAW|{1YoUrBiTcOiNaDdReSs987654321098765}|{sum}, where the sum is an integer, written in satoshi (note that there's a minimum of 50000 to withdraw, equivalent to 0.0005 BTC). Bear in mind that if you zero out your account it will become inactive and you won't be able to sell any symbols. You can use this feature to lock your account for whatever reason (vacation, changing of pgp key etc). If you don't mean to lock the account make sure you leave a few miliBTC in.</li>
+<br /><li>DEPOSIT|{sum}, where the sum is an integer, written in BTC (note that you can not deposit less than 10 BTC). You will be quoted an exact sum, which you must send to the exchange address (1Fx3N5iFPDQxUKhhmDJqCMmi3U8Y7gSncx). Don't round anything, the decimals are there to identify you as the beneficiary. You will be credited the full amount. <strong><font color=red>Incoming Bitcoin that doesn't exactly match a quoted sum will be simply kept, reported as profits and distributed to MPEx shareholders.</font></strong></li>
+<br /><li>DIVIDEND|{MPSIC}|{total dividend to pay}|{notional float}, where the total dividend to pay is equal to... the total dividend you pay (in satoshi) and the notional float is the total amount of shares in circulation (as established in your IPO contract). MPEx will handle the distribution. It is safe to send small sums (ie, a 1 BTC total dividend on a 5.2 million notional float will yield the correct 0.00019230 BTC dividend to the holder of a 1k share block).</li>
+<br /><li>PUSH|{MPSIC}|{40 char key fingerprint}|{qty}, which allows you to push an asset (including BTC) to another account on MPEx. This is free of charge but <b>it does not check if the keyid exists</b> so please, for the love of all that is holy, make sure you don't send your stocks to limbo.</li>
+<br /><li>SPLIT|{MPSIC}|{btc}, which allows you to split a number of whole BTCs into CALL-PUT pairs for a given strike. Say you want to sell short CALLS and PUTS all struck at 5.0 expiring this month. Provided you have 100 BTC in your account you go SPLIT|O.BTCUSDC050T|100 (or SPLIT|O.BTCUSDP050T|100, same thing) and voila, you now have 50 CALLS @5.0 (and a number of PUTS @5.0 based on the strike/current BTC/USD ratio) in your account, which you can sell. At the month's end you will receive the 100 BTC back, minus any costs resulting from exercises.</li>
+<br /><li>MKOPT|{MPSIC}|{qty}, which allows you to create a number of the quoted contracts, provided you have the BTC to put up as collateral. Each CALL requires 1 BTC of collateral irrespective of strike. Each PUT requires an amount of collateral equal to strike / spot BTC . Bear in mind that whenever someone exercises options of your symbol you will be allocated a portion of the executions corresponding to your total share of created contracts for that symbol. Thus if you create 100 O.BTCUSD.C50T and someone else creates 150, in case there's an execution of 50 contracts you will be assigned 20 of those.</li>
+<br /><li>MKFUT|{MPSIC}|{qty}, which allows you to create a number of the quoted contracts, provided you have the BTC to put up as collateral. Each contract requires 1.8x its last settlement value. Once the contracts settle you will be credited deposited collateral minus the settlement value of the contracts.</li>
+<br /><li>EXERCISE|{MPSIC}|{qty}, which allows you to exercise a number of option contracts.</li>
+</ul>
+<h3><a href="#6" name="6">6.</a> <i>But how do I actually send an order ?</i></h3><ul>
+
+Sending an order works like this : you clearsign your order (gpg --clearsign), then you encrypt the result with the exchange's public key (gpg --encrypt --armor -r F1B69921). If you don't have that key try gpg --search-keys 'F1B69921'. The exchange answers with a signed message encrypted with your own public key, which you can decrypt at will. You don't have to use the web interface at all, you can POST directly to the script (via for instance curl).
+<br /><br />
+If that didn't make any sense to you : 
+<ol>
+<br /><li>Open up a terminal. On Ubuntu you press Ctrl+Alt+T. On Os/X (Macs) you navigate to /Applications/Utilities and double-click on Terminal. In Windows you click Start > Run > cmd.exe.</li>
+<br /><li>Type gpg --clearsign, hit Enter. If it complains that it can't find gpg, you have to navigate to the directory where you have it installed. If you have ever identified with gribble you certainly have it installed. If you never did, aren't part of the <a href=http://bitcoin-otc.com/viewratings.php>WOT</a> etc you should go get it right now. Trying to be part of a <em>crypto</em>currency without knowing how to use gpg is like trying to be part of the 60s without knowing how to use a bong. If you're on Windows <a href=http://www.gpg4win.org/about.html>this</a> is a good place to start. Also make sure you read the documentation, for instance <a href=http://www.madboa.com/geek/gpg-quickstart/>here</a>.</li>
+<br /><li>Type your passphrases if prompted for it, hit Enter. Don't panic if nothing seems to happen and you just get a blinky cursor, this is RMS-style user interface.</li>
+<br /><li>Type your command for MPEx, such as STAT, then hit Ctrl-d and Ctrl-d again. (On some systems such as Windows this might be Ctrl-z instead. Whatever EOF is on your system, that's what you need.)</li>
+<br /><li>Type gpg --encrypt --armor -r F1B69921, hit Enter.</li>
+<br /><li>If prompted for confirmation on whether to trust the key press y, hit Enter. This means you haven't signed the key, please do so (type gpg --sign-key F1B69921 hit Enter then gpg --send-key F1B69921 hit Enter.).</li>
+<br /><li>Paste the clearsigned message from before. Get the whole thing, don't just copy the signature block. It starts with "-----BEGIN PGP SIGNED MESSAGE-----". Hit Ctrl-d and Ctrl-d again.</li>
+<br /><li>Paste the gnarly result into the MPEx box, "Output as html" checked (it's checked by default).</li>
+<br /><li>Copy the resulting message.</li>
+<br /><li>Go back to terminal, type gpg, hit Enter.</li>
+<br /><li>Paste message, Ctrl-d and Ctrl-d again.</li>
+<br /><li>If prompted for passphrase type it in, hit Enter. It'll pop up your sig info, hit Ctrl-d.</li>
+<br /><li>At this point you are looking at the exchange's response. If it complains that you pasted mangled output you probably didn't correctly copy/paste things. If it doesn't complain then congratulations! You've made it.</li>
+</ol>
+
+</ul><h3><a href="#7" name="7">7.</a> <i>You mean I have to do all that by hand all the time ?</i></h3><ul>
+
+Not really. Give a look to <a href=https://github.com/Azelphur/pyMPEx>pyMPEx</a>, the python script contributed by Azelphur. If you don't have or don't like python there's also <a href=https://github.com/modsix/bitotter_perl>a perl equivalent</a>, contributed by mod6. Also there are some projects in the works by people in the community to develop broker sites on top of the MPEx infrastructure. If you're part of the evil Windows empire aegis was nice enough to make a <a href=http://github.com/ageis/MPEx-bin>stand-alone 32bit exe</a> compile. Also a Mac version. Same place.
+
+</ul><h3><a href="#8" name="8">8.</a> <i>Apparently gpg can't find F1B69921 ?</i></h3><ul>
+
+You need port 11371 open for gpg to be able to find keys. If all else fails, gpg --import and paste the below :<br /><br />
+-----BEGIN PGP PUBLIC KEY BLOCK-----<br />
+Version: GnuPG v1.4.9 (GNU/Linux)<br />
+<br />
+mQGiBE9cKo4RBACdRJfDLOsztjn22MN36kj2F0DDU17Bcq40kYpfW8DKVIDUJngP<br />
+AYgHhrt0WIRP7X+njs7/c9a0S0z2ysC1W9knf/iC4RWO2ofiCaMpdpzIJ433O+nR<br />
+S64gu9ameP/RZXcpy7rRI9jD6y+aeVKtbxEuGqChYw0clPg1Gh7m+YdGiwCgpn5n<br />
+Pq0pp6eXDoh4yssVcEWReXsD/jvhjFl6PRlt+L5ZS6cLQCuBH7/uCt0AXdeydbSU<br />
+6OE9DeRo1XRd3Cn6Y5hcTzTSEph/JBse374WSwbzOXGiKVEaX5hgKo/BXw+Ne7ae<br />
+XJGx1EUhGdGTn4V5Xu04KkpOn/O6Vu6BOEnML2xKtkQnCbkvG+Y2YDSLU6ZYHaPd<br />
+YGStA/4jS03b128dR+ETbBrUqZtlNOlBW9f38R1mO192LHmc8v4Jtq4bbhGt0/rV<br />
+qRaCqCcS8vaQQrNYR9xyqVeX0wjZya3dXdKve6+ZGTwFaJP6vxTkAH/J4g5uP7T6<br />
+Kb2rmAjuVEimEl6oBmyUjyyynghJWq9AAZcZfkUT8iQBEOqyQ7RMTVAgU3RvY2sg<br />
+RXhjaGFuZ2UgKFZpc2l0IGh0dHA6Ly9wb2xpbWVkaWEudXMvYml0Y29pbi8pIDxv<br />
+ZmZpY2VAcG9saW1lZGlhLnVzPohmBBMRAgAmBQJPXCqOAhsDBQkB4TOABgsJCAcD<br />
+AgQVAggDBBYCAwECHgECF4AACgkQkhT8a/G2mSHobwCfamcRWvl7kvOUP7koIKc0<br />
+OOtcxdUAniPmSrdPNOhiTO0i82EqXw8ngccsuQINBE9cKpIQCADQCMqkdQg91uJP<br />
+qMCzFMGUx2GShG6gTleNibkcSgRJ2mOGoZ1lYMvyX+wZfrDWgFRMkj7DQ2wN4M1S<br />
+DMgaO3nSKPzYSVWfGu2+NapApr4pctFSJAHDX9SAN/iI03BSU66oH7xaNoOcDvcL<br />
+Wq2sv2InSsv29Dwt8fBtnd7/GFATxx+hsXzUVOfhuukw3FjMJsfANDvk6pq+4mj9<br />
+VVUaFjdnjyv8mXEd3LAslh4WpgavnGiowRzsjYall62+hB0BwOmze8Me+XpaVdlQ<br />
+h/7Vg5/2FPBeq0AKafxgDzpmzjv8mTMdozT7WNCaJx/jnJsMzlEDTkKmxWcen3KH<br />
+jef3GEB3AAMFCAC0I9PjZcJodK8srx7Dlr3dlRpLEcbb4FIo4GQL9839LYtmHg9f<br />
+y8eVh0nGWOXhtMeM5BdT609R5Amidq+u9ek9UP2zWevWXe4FzwYR87HdMS8eeho/<br />
+sS46CzRcXAp2rIusJIa8xFC8ORbGeyfq7f4OIgE4fVNkGYOB2vJ7urkSVf2HpUhd<br />
+1LXZ7i3mVUlanGmw1wpGSTs92UnnuDMK1LyjSqlV7XpTADSc1Hu6IX0aD/ZYoFCo<br />
+i1QBegdnTmsqOVam6rlfXadGv4al1bKaSoWMEDHuHc9uxgXBfu9eZBiSx5Jh94K6<br />
+xPKFbsv6C7JuR38/yOd66KogzAKml+u2x821iE8EGBECAA8FAk9cKpICGwwFCQHh<br />
+M4AACgkQkhT8a/G2mSGYBgCfUZo6sAQTqBP1Yj/uimYchwXJu5oAn23wZiriVCHq<br />
+1zyvnUmYeiH+q9xR<br />
+=oQGJ<br />
+-----END PGP PUBLIC KEY BLOCK-----
+
+</ul><h3><a href="#9" name="9">9.</a> <i>Why doesn't PUSH check if the destination account exists ? That's no way to run an exchange!</i></h3><ul>
+
+If it did check then a snoop could find out whether a given account exists or not. 
+
+</ul><h3><a href="#10" name="10">10.</a> <i>You know those charts without any indication of scale ? That's not how charts work.</i></h3><ul>
+
+Yes, well, trying to do the best in a limited space. The charts flow left to right (oldest data left, newest data right). Each column/dot represents a day, for 30 days total rolling window (so, past 24 hours = today ; 24 to 48 hours ago = yesterday etc). Vertically the scale for volume can be gleaned from the last day's volume, which is given as a numerical value whereas the scale for prices can be gleaned from the month's min/max prices, which are also given as numerical values. 
+<br /><br />
+Also, you might wish to check out <a href=http://live.coinbr.com/?mpsic=S.MPOE>live.coinbr.com</a>.
+
+</ul><h3><a href="#11" name="11">11.</a> <i>What about data feeds ?</i></h3><ul>
+
+For the perennially curious there's a transactions <a href=http://mpex.co/mpex-rss.php>RSS feed</a> as well as a <a href=http://bitcoin-assets.com/mpex-socket/>socket connection</a> (with SierraCharts plugin) and a <a href="https://twitter.com/#!/mpex1" rel="nofollow">twitter feed</a>. For the bot builder in all of us there's a 1d/7d/30d rolling window <a href=http://mpex.co/mpex-vwap.php>volume-weighted average price json</a> as well as a full <a href=http://mpex.co/mpex-mktdepth.php>market depth json</a>. 
+
+</ul><h3><a href="#12" name="12">12.</a> <i>Are there any fees ?</i></h3><ul>
+
+There is a 30BTC fixed fee for adding your public key to the MPEx. This is a one-time fee. All sellers are assesed a 0.2% fee at the moment the sale completes (so if you sell 500 stocks for 100 satoshi each you get 49`900 satoshi or 0.000499 BTC). All MKOPT and MKFUT orders are assesed a 2% fee (SPLIT orders are free). 
+
+</ul><h3><a href="#13" name="13">13.</a> <i>Is there some way I could be an affiliate ?</i></h3><ul>
+
+Sure. If you already have an account and someone mentions your keyid when they sign up for a new account each of you will be credited 5 BTC. Simple as pie. 
+
+</ul><h3><a href="#14" name="14">14.</a> <i>So why would I use MPEx ?</i></h3><ul>
+
+Lowest transaction fees, significantly more market depth, better security, higher uptime and faster response than anywhere else. Among other things. O, and margin.
+
+</ul><h3><a href="#15" name="15">15.</a> <i>Margin ?!</i></h3><ul>
+
+Yes, MPEx allows you to trade on margin. To qualify you must have a solid <a href=http://bitcoin-otc.com/viewratings.php>WOT rating</a> and considerable trade volume on MPEx. Amounts and rates negotiable, you will have to talk to mircea_popescu (usually in #bitcoin-assets, or alternatively <a href=http://polimedia.us/trilema/wp-content/uploads/office.jpg>email</a>) to get yours. 
+<br /><br />
+Note that margin doesn't work in the "traditional" way, moreover you get the lump sum added to your account. Note that you will be required to gpg-sign a commitment to repay with specific terms. All withdrawals made while margined will go towards reducing the margin first. 
+
+</ul><h3><a href="#16" name="16">16.</a> <i>Do you pay interest on balances ?</i></h3><ul>
+
+MPEx has in the past paid 80% of the MPBOR (MPOE Bonds Offered Rate, the interest rate as fixed by the monthly bond auction detailed <a href=http://polimedia.us/trilema/2012/sa-ne-jucam-de-a-investitiile-n-bitcoini/#comment-78745>here</a>). This is currently suspended (since July 2012). The feature may be reintroduced.
+
+</ul><h3><a href="#17" name="17">17.</a> <i>Yes but 30 BTC for registering ? That's extortion!</i></h3><ul>
+
+That fee was waived for about a month during the beta, so at the very least it'd have to be a combination of extortion with laziness. Then it was 20 BTC. Now it's 30 BTC. The fee is projected to keep going up for the undetermined future.
+
+</ul><h3><a href="#18" name="18">18.</a> <i>How do I go about taking advantage of this vaunted "100% security" ?</i></h3><ul>
+
+<b>Step 1.</b> Create a new GPG key <i>on a machine that never connects to the Internet</i>. Do not advertise this key anywhere, do not register it with gribble, do not use it anywhere at all.
+<br /><b>Step 2.</b> Email the public key encrypted as described above. 
+<br /><b>Step 3.</b> Make your first deposit (make sure it covers for the account registration fee). Note that due to the encoding <em>it does not matter where the payment comes from</em>. You can withdraw the money from a pool or MtGox or pretty much any public service which allows bitcoin withdrawals to a specified address.
+<br /><b>Step 4.</b> Your account is now set up, you can use it in full confidence. Yes, this includes the inconvenient step of transferring GPG-encoded strings from a cold machine to a hot machine. Security always comes at a cost of convenience.
+<br /><br />
+Some important points to keep in mind : <ul><br />
+<li>The machine handling encryption and decryption on the MPEx side never connects to the Internet. There is no cable. As such, it does not even do updates of keys. Should your key become expired or revoked <strong><font color=red>you will have to create a new account</font></strong>. We will not transfer your assets for you if it cannot be established beyond the shadow of a doubt that they are in fact yours. Please handle key expiration and revocation responsibly. 
+</li><br /><li>Internet-facing machines do hold copies of the database. They are reasonably secured, which probably means they are more secure than most any other bitcoin-based application at this time. However, their absolute security is not considered a strategic priority and no extraordinary measures are undertaken to ensure it. Provided that an attacker manages to breach one or all such machines it would be possible for that attacker to acquire a copy of the list of all accounts (not emails, but keyids), their transaction history, assets and so forth. If you follow Step 1 above even in this scenario the attacker gains no benefit : he now knows that "someone" owns so-and-so assets, which is information he could have compiled anyway watching the tickers on irc/twitter etc. If you do not follow Step 1 above it is possible for your assets holdings to be identified in this (unlikely) scenario. If you value your anonimity do follow Step 1 above. 
+</li><br /><li>While it is true that an attacker could, in extraordinary circumstances, acquire a snapshot of the database, it is not true that an attacker could commit alterations to it, even in the event that he controls without being detected all the machines used for running MPEx. We have numerous data integrity procedures in place, many of which <em>are not automated</em>.
+</li><br /><li>Due to the fact that all information is gpg-encrypted you can safely use any proxies or tor networks; you can even send all your orders from the local public library. If your anonymity is important to you you are well advised to do exactly that.
+</li><br /><li>Due to the way the system is designed, even in the case of catastrophic breach of the gpg protocol (if overnight someone finds a way to reliably and cheaply crack keys) <em>your account is not immediately at risk</em>, provided you have followed Step 1 above. Only a combination of this scenario with the previously discussed scenario is actually dangerous. Should in fact such a catastrophic breach of the gpg protocol occur we will immediately take supplementary security measures utterly paranoid in their extension to ensure the machines will not be compromised for the interim in which a solution is found.
+</ul>
+<br /><br />
+In short : secret gpg keyid + anonymous IPs = perfect security. Not so secret gpg key, not so anonymous IPs = imperfect security. The exact level of security that best fits your needs is yours to determine. Please consider these points carefully and draw up your own strategy and policies. 
+
+</ul><h3><a href="#19" name="19">19.</a> <i>Do you use Google Analytics ?</i></h3><ul>
+
+No. Making a BTC financials website and then slapping GA on it is really akin to going to a cancer survivor's survival party and bringing them chemo drugs as a gift. Yes, it's that insulting/thoughtless. Really. Yes, it does show that level of outright contempt for the user. Really. 
+<br /><br />
+Also GA does break Tor in many cases.
+
+</ul><h3><a href="#20" name="20">20.</a> <i>Was MPEx security ever independently audited ?</i></h3><ul>
+
+<a href="http://www.reddit.com/r/Bitcoin/comments/ycgm8/freeforall_pentesting_on_mpex/" rel="nofollow">Sort of</a>.
+
+</ul><h3><a href="#21" name="21">21.</a> <i>What happens if your domain(s) or server(s) are confiscated ?</i></h3><ul>
+
+In case the domain is confiscated or otherwise lost MPEx will move to a different domain, in a different jurisdiction. Should the same happen again, MPEx would move to what will at the time be a solid alternative for a free Internet, be it the TOR network, namecoin or some equivalent DNS or any comparable solution. No government will ever be able to stop the Internet, in general. We're prepared to show this in the particular.
+<br /><br />
+Should the systems be confiscated or otherwise lost the service will failover to different systems, possibly on bulletproof hosting if need be. If sufficient pressure is put on this side MPEx will be recoded as a p2p system.
+
+</ul><h3><a href="#22" name="22">22.</a> <i>Even so, how would the investors be affected in the event MPEx can no longer be continued ?</i></h3><ul>
+
+In the unlikely case that the continuation of MPEx becomes impossible, all issuers will be provided with lists of their shareholders. A successor system would have to be constructed (either centralized or maintained independently by the respective issuers), but no information is lost : since people can still sign with their keys, it is trivial for anyone who is in fact a shareholder to identify himself as shareholder. Just to be on the safe side, a dump of all users' final STATs, encrypted with their keys and clearsigned by the exchange will be released before closing, in whatever manner will be deemed at that time efficient, as for instance on a p2p file sharing system.
+<br /><br />
+Also worth mentioning, you can create <a href=http://mpex.co/db_dump.php>your very own copy of the MPEx database</a>, containing sufficient information to reconstruct ownership of coins and shares even if all our back-ups are compromised.
+</ul><h3><a href="#23" name="23">23.</a> <i>What will you do about stolen coins ? How will you help the rightful owner ?</i></h3><ul>
+
+By definition the rightful owner of any coins is "he who can send them". If you take issue with that, please stick to fiat. You are not ready for Bitcoin yet.
+
+</ul><h3><a href="#24" name="24">24.</a> <i>What will you do in case I can't sign with my key anymore ?</i></h3><ul>
+
+Most likely nothing. If either your account is very large and / or I know you I might try to verify you. Maybe. Don't count on it, but instead proceed with the clear state of mind that if you lose your keys you lose your assets. It's healthier.
+
+</ul><h3><a href="#25" name="25">25.</a> <i>What is the reference BTC/USD ratio you use for options exercises ?</i></h3><ul>
+
+The 24 hour volume-weighted cross-exchange ratio is used, as <a href=http://bitcoincharts.com/markets/currencies/>published by bitcoincharts</a>. The same figure is available in any IRC channel where gribble is present. The command is ;;bc,24hprc
+
+</ul><h3><a href="#26" name="26">26.</a> <i>What if that becomes unavailable ?</i></h3><ul>
+
+If the service is temporarily unavailable the MPOE market maker bot for options on MPEx will stop quoting. Exercises will occur at the last available price. This has happened a few times in the past, but the interruption never exceeded a couple of hours.
+<br /><br />
+Should the service be unavailable for a longer interval I will devise some other way to obtain the data and calculate the average. In principle I would prefer for a third party to be doing this, but absent such it will be done by MPEx itself.
+<br /><br />
+If for whatever reason there no longer exists a reliable way to calculate average prices (such as for instance MtGox being suddenly and permanently closed or other such catastrophic event) options will be refunded at prices originally paid.
+</ul><h3><a href="#27" name="27">27.</a> <i>Do you hedge your options positions ?</i></h3><ul>
+
+No.
+
+</ul><h3><a href="#28" name="28">28.</a> <i>Why not ?</i></h3><ul>
+
+You can't pull yourself up by your breeches and for the very same reason you can't have everybody in the market hedge. Someone needs to provide the support everyone else relies on to hedge. I'm that someone. 
+
+</ul><h3><a href="#29" name="29">29.</a> <i>You could at least buy / sell BTC according to your book...</i></h3><ul>
+
+No, I could not. For one, the spot is not at all trustworthy yet. For the other, the volume is so low that if I did that I'd cause chaos. Think "microphone next to speaker" sort of situation.
+
+</ul><h3><a href="#30" name="30">30.</a> <i>I have a question not answered here, can I get live support ?</i></h3><ul>
+
+Yes. #bitcoin-assets or #trilema on <a href=http://webchat.freenode.net/>freenode</a>, look for mircea_popescu.
+
+</ul><h3><a href="#31" name="31">31.</a> <i>So did you do it all by yourself ?</i></h3><ul>
+
+Not really. While <a href=http://bitcoin-otc.com/viewratingdetail.php?nick=mircea_popescu&sign=ANY&type=RECV&sortby=rating&sortorder=DESC>Mircea Popescu</a> has been managing the project and putting up the capital since the very beginning, most of the code was written and tested by a six man team (of which as it usually turns out two or three individuals did most of the heavy lifting). The economics side is the result of many a late night discussion in a small but loose group of financial professionals (informally known as "the Board") based at least in part on research conducted by a dedicated Market Analysis Desk, which is currently (April 2012) three people. There are a couple of people working secretarial, PR, media buying and other support tasks. In short, MPOE/MPEx is about the size of a small Mormon family.
+<br /><br />
+There has been significant support generously donated by many members of the community, in many shapes and forms - from bug reporting and factual error checking to financial model evaluation etc. These are, listed in alphabetical order and with our sincere thanks : ageis, azelphur, brendio, ezl, cory, jurov, kakobrekla, nanotube, onefixt, mod6, random_cat, rdponticelli, reeses, smickles, sgornick, the00dustin, znort alongside many others. Bitcoin is in fact first and foremost a wonderful community of highly skilled, intelligent and open minded people which tearfully reminds one of the old days of the pre-September Internet.
+
+</ul><h3><a href="#32" name="32">32.</a> <i>What happened to the cute little unicorn!</i></h3><ul>
+
+*Poof*. Initially I thought adding a few vignettes might be a nice way to showcase community talent and funnel some coins from the rich fat cat to the starving artist, but alas there wasn't much in the way of talent to showcase. Maybe in time.
+
+</ul><h3><a href="#33" name="33">33.</a> <i>How do I know you're respectable ? Have you received any awards ?</i></h3><ul>
+
+Yes, in point of fact we have. We are the proud recipients of both the respected Slightly Smoky Dragon trophy as well as the coveted Double Cherry Truck insignia. Proof below : 
+<br /><br />
+<img src="cherries2.png"> <img src="dragon-1.png"> 
+
+</ul>
+
+</ul><h3><a href="#34" name="34">34.</a> <i>Ahh, but did you expect the Spanish Inquisition ?</i></h3><ul>
+
+Nobody expects the Spanish Inquisition.
+
+</ul>
