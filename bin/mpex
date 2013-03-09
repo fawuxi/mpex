@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+
+# Try loading bundler if it's possible
+begin
+  require 'rubygems'
+  require 'bundler/setup'
+rescue LoadError
+  # no problem
+end
+
+# Add lib to load path
+$LOAD_PATH.unshift(File.expand_path(File.dirname(__FILE__) + '/../lib'))
+
+require 'mpex'
+require 'mpex/cli'
+require 'mpex/interactive'
+require 'mpex/irc'
+
+Mpex::CLI.run(ARGV)
