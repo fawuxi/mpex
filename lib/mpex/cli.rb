@@ -162,6 +162,21 @@ end
 end
 
 @cmd.define_command do
+  name 'portfolio'
+  usage 'portfolio [options]'
+  summary ""
+
+  run do |opts, args|
+    mpex = Mpex::Mpex.new
+    mpex.send_plain('STATJSON', opts) do |stat|
+      mpex.portfolio(opts, JSON.parse(stat)) do |portfolio|
+        puts portfolio
+      end if stat
+    end
+  end
+end
+
+@cmd.define_command do
   name 'orderbook'
   usage 'orderbook [options]'
   summary "show mpex orderbook"
