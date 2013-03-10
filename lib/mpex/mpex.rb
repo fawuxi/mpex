@@ -132,21 +132,27 @@ module Mpex
       yield vwaps
     end
 
-    def fetch_orderbook(&block)
+    def fetch_orderbook(opts = {}, &block)
+      orderbook = []
       if $IRC_LEAK && $IRC_LEAK.connected?
         $IRC_LEAK.depth do |depth|
           orderbook = JSON.parse depth
-          orderbook.each do |s|
-            puts s.first
-            s.last["S"].sort_by { |price, amount| -price }.each do |o|
-              puts "SELL price: #{Converter.satoshi_to_btc(o.first)} amount: #{o.last}"
-            end
-            s.last["B"].sort_by { |price, amount| price }.each do |o|
-              puts "BUY price: #{Converter.satoshi_to_btc(o.first)} amount: #{o.last}"
-            end
-          end
         end
       else
+        opts = verify_opts_present(opts, [ :url ])
+        orderbook_url = mpex_uri(opts[:url]).merge("/mpex-mktdepth.php")
+        orderbook_res = Net::HTTP.get(orderbook_url)
+        orderbook_res = orderbook_res.start_with?("JurovP") ? orderbook_res.match(/JurovP\((.+)\)/)[1] : orderbook_res
+        orderbook = JSON.parse(orderbook_res)
+      end
+      orderbook.each do |s|
+        puts s.first
+        s.last["S"].sort_by { |price, amount| -price }.each do |o|
+          puts "SELL price: #{Converter.satoshi_to_btc(o.first)} amount: #{o.last}"
+        end
+        s.last["B"].sort_by { |price, amount| price }.each do |o|
+          puts "BUY price: #{Converter.satoshi_to_btc(o.first)} amount: #{o.last}"
+        end
       end
     end
 
