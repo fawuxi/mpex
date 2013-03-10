@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "gpgme"
   s.add_runtime_dependency "net-yail"
 
+  s.add_development_dependency "rake"
   s.add_development_dependency "cucumber"
   s.add_development_dependency "rspec-expectations"
 
