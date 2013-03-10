@@ -1,5 +1,6 @@
 require 'net/yail'
 require 'net/http'
+require 'timeout'
 
 module Mpex
   # TODO to be improved and to be made configurable!
@@ -7,6 +8,7 @@ module Mpex
 
     ASSBOT = "assbot"
     MPEXBOT = "mpexbot"
+    TIMEOUT = 30 # seconds
 
     def initialize
       @irc = Net::YAIL.new(
@@ -24,6 +26,10 @@ module Mpex
       @irc.on_welcome do |event|
         puts "\nConnected to IRC."
         @connected = true
+      end
+
+      @irc.hearing_msg do |event|
+        @last_message = {:nick => event.nick, :message => event.message}
       end
 
       puts "Connecting. Please wait."
@@ -44,39 +50,63 @@ module Mpex
       dpaste_url = res['Location']
       @irc.msg(ASSBOT, "!mp " + dpaste_url)
 
-      @irc.hearing_msg do |event|
-        resp_url = parse_message(event.message)
-        mpex_res = Net::HTTP.get(URI.parse(resp_url)) if resp_url
-        yield mpex_res
+      status = Timeout::timeout(TIMEOUT) {
+        yield wait_for_assbot_message
+      }
+    end
+
+    def wait_for_assbot_message
+      while true
+        if @last_message
+          answer = handle_assbot_incoming(@last_message[:message])
+          if answer
+            @last_message = nil
+            return answer
+          end
+        end
       end
     end
 
-    def parse_message(msg)
+    def handle_assbot_incoming(msg)
       if msg.start_with? "Response: http:"
-        return msg.split[1]
+        resp_url = msg.split[1]
+        return Net::HTTP.get(URI.parse(resp_url))
       end
     end
 
     def vwap(&block)
       @irc.msg MPEXBOT, '$vwap'
-      
-      @irc.hearing_msg do |event|
-        mpexbot_res = Net::HTTP.get(URI.parse(event.message)) if event.message.start_with?("http:")
-        yield mpexbot_res.to_s if mpexbot_res
-      end
+
+      status = Timeout::timeout(TIMEOUT) {
+        yield wait_for_mpexbot_message
+      }
     end
 
     def depth(&block)
       @irc.msg MPEXBOT, '$depth'
-      
-      @irc.hearing_msg do |event|
-        if event.message.start_with?("http:")
-          uri = URI.parse(event.message);
-          id = uri.path[1..-1]
-          uri = URI.parse("http://pastebin.com/raw.php?i=" + id)
-          mpexbot_res = Net::HTTP.get(uri)
+
+      status = Timeout::timeout(TIMEOUT) {
+        yield wait_for_mpexbot_message
+      }
+    end
+
+    def wait_for_mpexbot_message
+      while true
+        if @last_message
+          answer = handle_mpexbot_incoming(@last_message[:message])
+          if answer
+            @last_message = nil
+            return answer
+          end
         end
-        yield mpexbot_res.to_s if mpexbot_res
+      end
+    end
+
+    def handle_mpexbot_incoming(msg)
+      if msg.start_with?("http://pastebin.com")
+        id = URI.parse(msg).path[1..-1]
+        uri = URI.parse("http://pastebin.com/raw.php?i=" + id)
+        return Net::HTTP.get(uri)
       end
     end
 
