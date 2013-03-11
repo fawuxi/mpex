@@ -8,8 +8,8 @@ Gem::Specification.new do |s|
   s.authors     = ["Fa Wuxi"]
   s.email       = [""]
   s.homepage    = "https://github.com/fawuxi/mpex"
-  s.summary     = %q{Commandline Client for MPEx}
-  s.description = %q{Commandline client for "MPEx":http://mpex.co a Bitcoin security exchange. Make sure to carefully read its "FAQ":http://mpex.co/faq.html before using it.}
+  s.summary     = %q{MPEx.rb: a commandline client for MPEx}
+  s.description = %q{MPEx.rb is a commandline client for "MPEx":http://mpex.co a Bitcoin security exchange. Make sure to carefully read its "FAQ":http://mpex.co/faq.html before using it.}
 
   s.files         = Dir['[A-Z]*'] + Dir['{bin,lib,tasks,test}/**/*'] + [ 'mpex.gemspec' ]
   s.extra_rdoc_files = ['README.md']
@@ -28,7 +28,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "rspec-expectations"
 
   s.post_install_message = %q{------------------------------------------------------------------------------
-run "mpex help" for usage information
+run "mpex help" for usage information; or "mpex -i" to start interactive
 ------------------------------------------------------------------------------
 }
 end

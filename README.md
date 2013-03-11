@@ -1,8 +1,8 @@
-# Commandline Client for MPEx
+# MPEx.rb: a commandline client for MPEx
 
 ## About
 
-Commandline client for [MPEx](http://mpex.co), a Bitcoin security exchange. Make sure to carefully read its [FAQ](http://mpex.co/faq.html) before using it.
+MPEx.rb is a commandline client for [MPEx](http://mpex.co), a Bitcoin security exchange. Make sure to carefully read its [FAQ](http://mpex.co/faq.html) before using it.
 
 ## Install
 
