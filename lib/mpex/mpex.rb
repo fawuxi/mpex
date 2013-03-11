@@ -114,12 +114,14 @@ module Mpex
       orders_value
     end
 
-    def fetch_mpex_vwaps(url, &block)
+    def fetch_mpex_vwaps(url=nil, opts=nil, &block)
+      vwaps = ""
       if $IRC_LEAK && $IRC_LEAK.connected?
         $IRC_LEAK.vwap do |resp|
           vwaps = JSON.parse(resp)
         end
       else
+        url = url ? url : verify_opts_present(opts, [ :url ])[:url]
         vwaps_raw = Http.get(url, "/mpex-vwap.php")
         vwaps = JSON.parse(vwaps_raw)
       end
@@ -173,11 +175,24 @@ module Mpex
         vwap_valuation = holdings_value + orders_vwap_sum(stat, vwaps)
 
         portfolio = <<-PORTFOLIO
-          Your optimistic valuation: #{Converter.satoshi_to_btc(optimistic_value)}"
-          VWAP valuation: #{Converter.satoshi_to_btc(vwap_valuation)}
+Holdings:
+#{holdings_formatted(stat)}
+Totals:
+  Your optimistic valuation: #{Converter.satoshi_to_btc(optimistic_value)}"
+  VWAP valuation: #{Converter.satoshi_to_btc(vwap_valuation)}
         PORTFOLIO
         yield portfolio
       end
+    end
+
+    def holdings_formatted(stat)
+      holdings = ""
+      stat["Holdings"].each do |h|
+        mpsic = h.keys.first
+        amount = mpsic == "CxBTC" ? Converter.satoshi_to_btc(h[h.keys.first]) : h[h.keys.first]
+        holdings = holdings + "  #{mpsic}: #{amount}\n" unless h.keys.first == "md5Checksum"
+      end
+      holdings
     end
 
     def holdings_avg_value(stat, vwaps)
@@ -188,7 +203,9 @@ module Mpex
         elsif h["S.MPOE"]
           h["S.MPOE"].to_i*vwaps["S.MPOE"]["1d"]["avg"].to_i
         elsif h["S.DICE"]
-          h["S.DICE"].to_i*vwaps["S.DICE"]["1d"]["avg"].to_i
+          h["S.DICE"].to_i*vwaps["S.BBET"]["1d"]["avg"].to_i
+        elsif h["S.BBET"]
+          h["S.BBET"].to_i*vwaps["S.BBET"]["1d"]["avg"].to_i
         else
           0
         end

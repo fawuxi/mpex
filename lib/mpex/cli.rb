@@ -179,7 +179,7 @@ end
 @cmd.define_command do
   name 'orderbook'
   usage 'orderbook [options]'
-  summary "show mpex orderbook"
+  summary "show MPEx orderbook"
 
   run do |opts, args|
     mpex = Mpex::Mpex.new

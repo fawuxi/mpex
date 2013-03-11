@@ -130,10 +130,12 @@ module Mpex
     end
 
     def handle_mpexbot_incoming(msg)
-      if msg.start_with?("http://pastebin.com")
+      if msg.match(/http:\/\/pastebin\.com\/\d+/)
         id = URI.parse(msg).path[1..-1]
         uri = URI.parse("http://pastebin.com/raw.php?i=" + id)
         return Net::HTTP.get(uri)
+      elsif msg.start_with?("http://pastebin.com/raw.php")
+        return Net::HTTP.get(URI.parse(msg))
       end
     end
 
