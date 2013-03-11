@@ -1,4 +1,5 @@
 require "mpex/version"
+require "mpex/http"
 require "mpex/mpex"
 require "mpex/converter"
 

@@ -1,6 +1,4 @@
 require 'fileutils'
-require 'open-uri'
-require 'net/http'
 require 'json'
 require 'yaml'
 require 'highline/import'
@@ -68,8 +66,8 @@ module Mpex
           end
         end
       else
-        res = Net::HTTP.post_form(mpex_uri(opts[:url]), { 'msg' => "#{encrypted_msg}" })
-        yield handle_answer(res.body, opts)
+        res = Http.post_form(opts[:url], { 'msg' => "#{encrypted_msg}" })
+        yield handle_answer(res, opts)
       end
     end
 
@@ -80,10 +78,6 @@ module Mpex
 
       verified_response = verify(decrypted_response)
       verified_response.to_s
-    end
-
-    def mpex_uri(url)
-      URI.parse(url).merge("/")
     end
 
     def validate_mpsic(mpsic)
@@ -126,8 +120,8 @@ module Mpex
           vwaps = JSON.parse(resp)
         end
       else
-        vwap_url = mpex_uri(url).merge("/mpex-vwap.php")
-        vwaps = JSON.parse(Net::HTTP.get(vwap_url))
+        vwaps_raw = Http.get(url, "/mpex-vwap.php")
+        vwaps = JSON.parse(vwaps_raw)
       end
       yield vwaps
     end
@@ -140,8 +134,7 @@ module Mpex
         end
       else
         opts = verify_opts_present(opts, [ :url ])
-        orderbook_url = mpex_uri(opts[:url]).merge("/mpex-mktdepth.php")
-        orderbook_res = Net::HTTP.get(orderbook_url)
+        orderbook_res = Http.get(opts[:url], "/mpex-mktdepth.php")
         orderbook_res = orderbook_res.start_with?("JurovP") ? orderbook_res.match(/JurovP\((.+)\)/)[1] : orderbook_res
         orderbook = JSON.parse(orderbook_res)
       end
@@ -153,6 +146,16 @@ module Mpex
         s.last["B"].sort_by { |price, amount| price }.each do |o|
           puts "BUY price: #{Converter.satoshi_to_btc(o.first)} amount: #{o.last}"
         end
+      end
+    end
+
+    def list_proxies(&block)
+      if $IRC_LEAK && $IRC_LEAK.connected?
+        $IRC_LEAK.list_proxies do |proxies|
+          yield proxies
+        end
+      else
+        puts "This command only works when connected to irc. Type 'irc' to connect."
       end
     end
 

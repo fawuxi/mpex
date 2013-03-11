@@ -90,6 +90,26 @@ module Mpex
       }
     end
 
+    def list_proxies(&block)
+      @irc.msg MPEXBOT, '$proxies'
+
+      status = Timeout::timeout(TIMEOUT) {
+        yield wait_for_mpexbot_plain_message
+      }
+    end
+
+    def wait_for_mpexbot_plain_message
+      while true
+        if @last_message
+          answer = @last_message[:message]
+          if answer
+            @last_message = nil
+            return answer
+          end
+        end
+      end
+    end
+
     def wait_for_mpexbot_message
       while true
         if @last_message

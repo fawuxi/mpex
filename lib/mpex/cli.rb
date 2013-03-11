@@ -185,6 +185,20 @@ end
   end
 end
 
+@cmd.define_command do
+  name 'proxies'
+  usage 'proxies [options]'
+  summary 'list active MPEx proxies; only works when connected to IRC'
+
+  run do |opts, args|
+    mpex = Mpex::Mpex.new
+    mpex.list_proxies do |proxies|
+      puts proxies
+      puts "To use a proxy, edit ~/.mpex/config.yaml and restart mpex cli"
+    end
+  end
+end
+
 def self.run(args)
   @cmd.run(ARGV)
 end
