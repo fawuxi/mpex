@@ -48,6 +48,7 @@ module Mpex
     def send_encrypted(message, &block)
       res = Net::HTTP.post_form(URI.parse("http://dpaste.com/api/v1/"), { 'content' => "#{message}" })
       dpaste_url = res['Location']
+      puts "[IRC] Messaging #{ASSBOT}: !mp  #{dpaste_url}"
       @irc.msg(ASSBOT, "!mp " + dpaste_url)
 
       status = Timeout::timeout(TIMEOUT) {
@@ -60,6 +61,7 @@ module Mpex
         if @last_message
           answer = handle_assbot_incoming(@last_message[:message])
           if answer
+            puts "[IRC] #{ASSBOT} answered: #{@last_message[:message]}"
             @last_message = nil
             return answer
           end
@@ -75,6 +77,7 @@ module Mpex
     end
 
     def vwap(&block)
+      puts "[IRC] Messaging #{MPEXBOT}: $vwap"
       @irc.msg MPEXBOT, '$vwap'
 
       status = Timeout::timeout(TIMEOUT) {
@@ -83,6 +86,7 @@ module Mpex
     end
 
     def depth(&block)
+      puts "[IRC] Messaging #{MPEXBOT}: $depth"
       @irc.msg MPEXBOT, '$depth'
 
       status = Timeout::timeout(TIMEOUT) {
@@ -91,6 +95,7 @@ module Mpex
     end
 
     def list_proxies(&block)
+      puts "[IRC] Messaging #{MPEXBOT}: $proxies"
       @irc.msg MPEXBOT, '$proxies'
 
       status = Timeout::timeout(TIMEOUT) {
@@ -103,6 +108,7 @@ module Mpex
         if @last_message
           answer = @last_message[:message]
           if answer
+            puts "[IRC] #{MPEXBOT} answered: #{@last_message[:message]}"
             @last_message = nil
             return answer
           end
@@ -115,6 +121,7 @@ module Mpex
         if @last_message
           answer = handle_mpexbot_incoming(@last_message[:message])
           if answer
+            puts "[IRC] #{MPEXBOT} answered: #{@last_message[:message]}"
             @last_message = nil
             return answer
           end
