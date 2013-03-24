@@ -42,12 +42,12 @@ Mpex::Mpex.new.create_configfile_unless_exists # makes sure config file is prese
   name 'stat'
   aliases [:STAT, :status]
   usage 'stat [options]'
-  summary 'old style standard mpex STAT'
+  summary 'Formatted MPEx STATJSON'
 
   run do |opts, args|
     mpex = Mpex::Mpex.new
-    mpex.send_plain('STAT', opts) do |answer|
-      puts answer
+    mpex.send_plain('STATJSON', opts) do |answer|
+      puts mpex.format_stat(JSON.parse(answer))
     end
   end
 end

@@ -80,6 +80,31 @@ module Mpex
       verified_response.to_s
     end
 
+    def format_stat(stat)
+      header = {}
+      stat["Header"].map { |h| header[h.keys.first] = h[h.keys.first] }
+<<-STAT
+Stats for #{header["Name"]} (fingerprint #{header["Fingerprint"]})
+Issued at #{header["DateTime"]} (#{header["Microtime"]})
+
+Holdings:
+#{holdings_formatted(stat)}
+To which add orders in the book fully paid in advance:
+#{book_formatted(stat)}
+Options Cover:
+  #{stat["OptionsCover"].size > 1 ? stat["OptionsCover"] : ""}
+Futures Cover:
+  #{stat["IMMCover"].size > 1 ? stat["IMMCover"] : ""}
+Excercises:
+  #{stat["Exercises"].size > 1 ? stat["Exercises"] : ""}
+Your transactions since 1 hour before your last STAT:
+#{trade_history_formatted(stat)}
+Dividends:
+  #{stat["Dividends"].size > 1 ? stat["Dividends"] : ""}
+Formatted STATJSON. If you want the original run 'plain STAT'. Logs can be found here: #{LOGFILE_PATH}.
+STAT
+    end
+
     def validate_mpsic(mpsic)
       if mpsic.match(/^\w\./)
         return mpsic
@@ -183,6 +208,32 @@ Totals:
         PORTFOLIO
         yield portfolio
       end
+    end
+
+    def trade_history_formatted(stat)
+      history = ""
+      stat["TradeHistory"].each do |t|
+        unixtime = t.keys.first
+        total = t[unixtime]["Quantity"].to_i * t[unixtime]["Price"].to_i
+        unless unixtime == "md5Checksum"
+          history << "  #{Time.at(unixtime.to_i)} #{t[unixtime]["MPSIC"]} - #{t[unixtime]["Quantity"]} #{t[unixtime]["BS"] == "S" ? "sold" : "bought"} @#{Converter.satoshi_to_btc(t[unixtime]["Price"])}, total: #{Converter.satoshi_to_btc(total)}\n"
+        end
+      end
+      history
+    end
+
+    def book_formatted(stat)
+      book = ""
+      stat["Book"].each do |o|
+        order_number = o.keys.first
+        unless order_number == "md5Checksum"
+          book << "  #{o[order_number]["MPSIC"]}: #{o[order_number]["BS"]}\t"
+          book << "#{o[order_number]["Quantity"]}\t@"
+          book << "#{Converter.satoshi_to_btc(o[order_number]['Price'])}"
+          book << "\t(order ##{order_number})\n"
+        end
+      end
+      book
     end
 
     def holdings_formatted(stat)
