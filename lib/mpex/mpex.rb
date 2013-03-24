@@ -125,6 +125,27 @@ STAT
       orders_value
     end
 
+    def cumulated_sell_amounts(stat)
+      cumulated_sell_amounts = {}
+      stat["Book"].each do |order|
+        mpsic = order[order.keys.first]["MPSIC"]
+        cumulated_sell_amounts[mpsic] = cumulated_sell_amounts[mpsic].to_i + order[order.keys.first]["Quantity"].to_i if mpsic
+      end
+      stat["Holdings"].each do |h|
+        mpsic = h.keys.first
+        cumulated_sell_amounts[mpsic] = cumulated_sell_amounts[mpsic].to_i + h[mpsic].to_i if (mpsic and mpsic!="CxBTC" and mpsic!="md5Checksum")
+      end
+      cumulated_sell_amounts
+    end
+
+    def cumulated_sell_amounts_formatted(stat)
+      formatted = ""
+      cumulated_sell_amounts(stat).each do |mpsic, amount|
+        formatted << "  #{mpsic}: #{amount}\n"
+      end
+      formatted
+    end
+
     def orders_vwap_sum(stat, vwaps)
       orders_value = stat["Book"].map do |order|
         if order[order.keys.first]["BS"] == "B"
@@ -203,8 +224,11 @@ STAT
 Holdings:
 #{holdings_formatted(stat)}
 Totals:
-  Your optimistic valuation: #{Converter.satoshi_to_btc(optimistic_value)}"
+  Your optimistic valuation: #{Converter.satoshi_to_btc(optimistic_value)}
   VWAP valuation: #{Converter.satoshi_to_btc(vwap_valuation)}
+
+Security amounts eligible for dividends (if any) if dividend day were now:
+#{cumulated_sell_amounts_formatted(stat)}
         PORTFOLIO
         yield portfolio
       end
