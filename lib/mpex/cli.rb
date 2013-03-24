@@ -22,7 +22,9 @@ module Mpex::CLI
   option :m, :mpexkeyid, 'MPEx public key id (see FAQ#8)'
   option :p, :password, 'passphrase of your private key (unless provided you\'ll be asked for it)'
 
-  opt :i, :interactive, "start alternative interactive mode to mpex, useful for irc" do
+  option "0", :isinteractive, "internal flag set automatically in interactive mode"
+
+  opt :i, :interactive, "Start interactive mode to MPEx.rb. Required for irc. (think: an MPEx shell)" do
     Mpex::Interactive.run
     exit 0
   end
@@ -195,8 +197,13 @@ end
   summary 'connects an irc bot to freenode to talk to mpex via its bots'
 
   run do |opts, args|
-    $IRC_LEAK = Mpex::Irc.new
-    $IRC_LEAK.connect
+    if opts[:isinteractive]
+      $IRC_LEAK = Mpex::Irc.new
+      $IRC_LEAK.connect
+    else
+      puts "Connecting to IRC works in interactive mode only. Run 'mpex -i' to start MPEx.rb in interactive shell mode."
+      exit 0
+    end
   end
 end
 
@@ -209,7 +216,7 @@ end
     mpex = Mpex::Mpex.new
     mpex.list_proxies do |proxies|
       puts proxies
-      puts "To use a proxy, edit ~/.mpex/config.yaml and restart mpex cli"
+      puts "To use a proxy, edit ~/.mpex/config.yaml and restart mpex -i"
     end
   end
 end

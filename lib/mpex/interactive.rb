@@ -12,7 +12,7 @@ module Mpex::Interactive
 
       exit 0 if line =~ /^(exit|quit|q)$/
 
-      args = line.split(" ")
+      args = line.split(" ") + ["--isinteractive"]
 
       begin
         Mpex::CLI.command.run(args) unless args.empty?
