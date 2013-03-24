@@ -6,7 +6,7 @@ module Mpex::CLI
 @cmd = Cri::Command.define do
   name 'mpex'
   usage 'mpex [options] [command] [options]'
-  summary 'commandline interface for MPEX trading'
+  summary 'commandline interface for MPEx trading'
   description <<-DESC
     To change default settings edit ~/.mpex/config.yaml 
 
@@ -17,9 +17,9 @@ module Mpex::CLI
     exit 0
   end
 
-  option :s, :url, 'URL to MPEX (defaults to mpex.co)'
+  option :s, :url, 'URL to MPEx (defaults to http://mpex.co)'
   option :u, :keyid, 'key id of your gnupg key to use'
-  option :m, :mpexkeyid, 'mpex public key id'
+  option :m, :mpexkeyid, 'MPEx public key id (see FAQ#8)'
   option :p, :password, 'passphrase of your private key (unless provided you\'ll be asked for it)'
 
   opt :i, :interactive, "start alternative interactive mode to mpex, useful for irc" do
@@ -70,7 +70,7 @@ end
   name 'plain'
   aliases :p
   usage "plain [options] 'MPX|FOO|BAR'"
-  summary "send string as is signed/encrypted to mpex"
+  summary "send string as is signed/encrypted to MPEx"
 
   run do |opts, args|
     mpex = Mpex::Mpex.new

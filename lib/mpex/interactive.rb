@@ -4,7 +4,7 @@ require 'highline/import'
 module Mpex::Interactive
 
   def self.run
-    puts "Welcome to MPEX repl. Type 'help' and 'help [command]' to get a help or 'quit' to exit."
+    puts "Welcome to MPEx.rb shell. Type 'help' and 'help [command]' to get a help or 'quit' to exit."
     puts "Donations welcome: 1DrqwLjksrXZHdSzzieaNhQuhrnbNTeiQr"
     puts "Type 'irc' to connect to Freenode to use MPEx IRC bots"
     loop do

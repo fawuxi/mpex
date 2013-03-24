@@ -11,11 +11,11 @@ MPEx.rb is a commandline client for [MPEx](http://mpex.co), a Bitcoin security e
 
 ## Usage
 
-  $ mpex help
+  * mpex help
 
 If you want to use MPEx via IRC, use the interactive mode:
 
-  $ mpex -i
+  * mpex -i
 
 ## License
 
