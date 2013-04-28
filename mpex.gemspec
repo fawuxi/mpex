@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.summary     = %q{MPEx.rb: a commandline client for MPEx}
   s.description = %q{MPEx.rb is a commandline client for "MPEx":http://mpex.co a Bitcoin security exchange. Make sure to carefully read its "FAQ":http://mpex.co/faq.html before using it.}
 
-  s.files         = Dir['[A-Z]*'] + Dir['{bin,lib,tasks,test}/**/*'] + [ 'mpex.gemspec' ]
+  s.files         = Dir['[A-Z]*'] + Dir['{bin,lib,tasks,test}/**/*'] + [ 'mpex.gemspec', 'config.yaml.sample', 'FAQ.html' ]
   s.extra_rdoc_files = ['README.md']
   s.rdoc_options  = [ '--main', 'README.md' ]
   s.executables   = [ 'mpex' ]
