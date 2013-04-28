@@ -10,6 +10,8 @@ module Mpex::Interactive
     loop do
       line = ask("mpex>> ") {|q| q.readline = true }
 
+      next if line.empty?
+
       exit 0 if line =~ /^(exit|quit|q)$/
 
       args = line.split(" ") + ["--isinteractive"]
