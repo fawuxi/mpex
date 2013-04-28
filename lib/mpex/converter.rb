@@ -16,10 +16,10 @@ module Mpex
     
     def self.satoshi_to_btc(satoshi)
       satoshiStr = satoshi.to_s;
-      
+
       satoshiPart = "";
       btcPart = "0";
-      
+
       denominator = "";
 
       if (satoshiStr.size > 8)
@@ -38,13 +38,8 @@ module Mpex
           end
       end
 
-      # cut trailing zeros
-      while (satoshiPart.end_with?("0")) do
-          satoshiPart = satoshiPart.chomp("0");
-      end
-
       return denominator + btcPart + "." + satoshiPart;
     end
-    
+
   end
 end
