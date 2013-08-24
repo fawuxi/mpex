@@ -90,11 +90,14 @@ end
   run do |opts, args|
     mpex = Mpex::Mpex.new
     mpsic = mpex.validate_mpsic(args[0])
-    if args[2].match(/\./)
+    amount = args[1]
+    price = args[2]
+    if price.match(/\./)
       puts "Provide price in Satoshis!"
       exit 0
     end
-    order_string = "BUY|#{mpsic}|#{args[1]}|#{args[2]}"
+    say "<%= color('Buy #{amount} #{mpsic} @ #{Mpex::Converter.satoshi_to_btc(price.to_i)} BTC = #{Mpex::Converter.satoshi_to_btc(amount.to_i*price.to_i)} total BTC', :bold) %>"
+    order_string = "BUY|#{mpsic}|#{amount}|#{price}"
     mpex.send_plain(order_string, opts) do |answer|
       puts answer
     end
@@ -109,11 +112,14 @@ end
   run do |opts, args|
     mpex = Mpex::Mpex.new
     mpsic = mpex.validate_mpsic(args[0])
-    if args[2].match(/\./)
+    amount = args[1]
+    price = args[2]
+    if price.match(/\./)
       puts "Provide price in Satoshis!"
       exit 0
     end
-    order_string = "SELL|#{mpsic}|#{args[1]}|#{args[2]}"
+    say "<%= color('Sell #{amount} #{mpsic} @ #{Mpex::Converter.satoshi_to_btc(price.to_i)} BTC = #{Mpex::Converter.satoshi_to_btc(amount.to_i*price.to_i)} total BTC', :bold) %>"
+    order_string = "SELL|#{mpsic}|#{amount}|#{price}"
     mpex.send_plain(order_string, opts) do |answer|
       puts answer
     end
