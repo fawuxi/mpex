@@ -11,6 +11,7 @@ module Mpex
 
     CONFIG_FILE_PATH = File.join(Dir.home, ".mpex", "config.yaml")
     LOGFILE_PATH = File.join(Dir.home, ".mpex", "response.log")
+    TRADES_LOGFILE_PATH = File.join(Dir.home, ".mpex", "trades.log")
 
     def initialize
       @crypto = GPGME::Crypto.new(:armor => true)
@@ -18,7 +19,14 @@ module Mpex
         dirname = File.dirname(File.expand_path(LOGFILE_PATH))
         Dir.mkdir(dirname) unless Dir.exist?(dirname)
       end
-      @logger = Logger.new(LOGFILE_PATH)
+      @logger = Logger.new(LOGFILE_PATH, 'daily')
+      @logger.formatter = proc do |severity, datetime, progname, msg|
+        "#{severity} Log entry @ #{datetime}:\n#{msg}\n\n"
+      end
+      @trades_log = Logger.new(TRADES_LOGFILE_PATH, 'daily')
+      @trades_log.formatter = proc do |severity, datetime, progname, msg|
+        "#{msg}\n"
+      end
     end
 
     def sign(msg, opts)
@@ -29,7 +37,7 @@ module Mpex
     end
 
     def verify(msg)
-      @crypto.verify(msg) do |signature|
+      verified_plain_msg = @crypto.verify(msg) do |signature|
         if signature.valid?
           say("<%= color('#{signature}', :green) %>")
         else
@@ -37,16 +45,19 @@ module Mpex
           raise "WARNING: Invalid signature! Don't trust!"
         end
       end
+      verified_plain_msg.to_s
     end
 
     def encrypt(signed_msg, opts)
-      @crypto.encrypt(signed_msg, :recipients => opts[:mpexkeyid])
+      encrypted = @crypto.encrypt(signed_msg, :recipients => opts[:mpexkeyid])
+      encrypted.to_s
     end
 
     def decrypt(encrypted_data, opts)
-      @crypto.decrypt(encrypted_data, :password => opts[:password]) do |signature|
+      decrypted = @crypto.decrypt(encrypted_data, :password => opts[:password]) do |signature|
         raise "Signature could not be verified" unless signature.valid?
       end
+      decrypted.to_s
     end
 
     def send_plain(cleartext_command, opts, &block)
@@ -72,12 +83,33 @@ module Mpex
     end
 
     def handle_answer(encrypted_answer, opts)
-      decrypted_response = decrypt(encrypted_answer.to_s, opts)
+      decrypted_response = decrypt(encrypted_answer, opts)
 
-      @logger.info(decrypted_response.to_s)
+      @logger.info(decrypted_response)
 
       verified_response = verify(decrypted_response)
-      verified_response.to_s
+      verified_response
+    end
+
+    def statjson(opts, parsed=true, &block)
+      send_plain('STATJSON', opts) do |statjson|
+        stat = JSON.parse(statjson)
+        log_trade_histroy(stat)
+        if parsed
+          yield stat
+        else
+          yield statjson
+        end
+      end
+    end
+
+    def log_trade_histroy(stat)
+      stat["TradeHistory"].each do |t|
+        unixtime = t.keys.first
+        unless unixtime == "md5Checksum"
+          @trades_log.info(t)
+        end
+      end
     end
 
     def format_stat(stat)
@@ -125,23 +157,31 @@ STAT
       orders_value
     end
 
-    def cumulated_sell_amounts(stat)
-      cumulated_sell_amounts = {}
+    def cumulated_amounts(stat)
+      cumulated_amounts = {}
       stat["Book"].each do |order|
         mpsic = order[order.keys.first]["MPSIC"]
-        cumulated_sell_amounts[mpsic] = cumulated_sell_amounts[mpsic].to_i + order[order.keys.first]["Quantity"].to_i if mpsic
+        if (mpsic and order[order.keys.first]["BS"] == "S")
+          cumulated_amounts[mpsic] = cumulated_amounts[mpsic].to_i + order[order.keys.first]["Quantity"].to_i
+        elsif (mpsic and order[order.keys.first]["BS"] == "B")
+          cumulated_amounts["CxBTC"] = cumulated_amounts["CxBTC"].to_i + order[order.keys.first]["Quantity"].to_i * order[order.keys.first]["Price"].to_i
+        end
       end
       stat["Holdings"].each do |h|
         mpsic = h.keys.first
-        cumulated_sell_amounts[mpsic] = cumulated_sell_amounts[mpsic].to_i + h[mpsic].to_i if (mpsic and mpsic!="CxBTC" and mpsic!="md5Checksum")
+        cumulated_amounts[mpsic] = cumulated_amounts[mpsic].to_i + h[mpsic].to_i if (mpsic and mpsic!="md5Checksum")
       end
-      cumulated_sell_amounts
+      cumulated_amounts
     end
 
-    def cumulated_sell_amounts_formatted(stat)
+    def cumulated_amounts_formatted(stat)
       formatted = ""
-      cumulated_sell_amounts(stat).each do |mpsic, amount|
-        formatted << "  #{mpsic}: #{amount}\n"
+      cumulated_amounts(stat).each do |mpsic, amount|
+        if (mpsic == "CxBTC")
+          formatted << "  #{mpsic}:\t#{Converter.satoshi_to_btc(amount)}\n"
+        else
+          formatted << "  #{mpsic}:\t#{amount}\n"
+        end
       end
       formatted
     end
@@ -152,7 +192,7 @@ STAT
           order[order.keys.first]["Price"].to_i * order[order.keys.first]["Quantity"].to_i
         elsif order[order.keys.first]["BS"] == "S"
           mpsic = order[order.keys.first]["MPSIC"]
-          vwaps[mpsic]["1d"]["max"].to_i * order[order.keys.first]["Quantity"].to_i
+          vwaps[mpsic] ? vwaps[mpsic]["1d"]["max"].to_i * order[order.keys.first]["Quantity"].to_i : 0
         else
           0
         end
@@ -227,8 +267,8 @@ Totals:
   Your optimistic valuation: #{Converter.satoshi_to_btc(optimistic_value)}
   VWAP valuation: #{Converter.satoshi_to_btc(vwap_valuation)}
 
-Security amounts eligible for dividends (if any) if dividend day were now:
-#{cumulated_sell_amounts_formatted(stat)}
+Holdings including those stuck in open orders:
+#{cumulated_amounts_formatted(stat)}
         PORTFOLIO
         yield portfolio
       end
@@ -248,7 +288,7 @@ Security amounts eligible for dividends (if any) if dividend day were now:
 
     def book_formatted(stat)
       book = ""
-      stat["Book"].each do |o|
+      stat["Book"].sort_by { |o| o.keys.first == "md5Checksum" ? -1 : o[o.keys.first]["Price"].to_i }.each do |o|
         order_number = o.keys.first
         unless order_number == "md5Checksum"
           book << "  #{o[order_number]["MPSIC"]}: #{o[order_number]["BS"]}\t"
@@ -278,9 +318,11 @@ Security amounts eligible for dividends (if any) if dividend day were now:
         elsif h["S.MPOE"]
           h["S.MPOE"].to_i*vwaps["S.MPOE"]["1d"]["avg"].to_i
         elsif h["S.DICE"]
-          h["S.DICE"].to_i*vwaps["S.BBET"]["1d"]["avg"].to_i
+          h["S.DICE"].to_i*vwaps["S.DICE"]["1d"]["avg"].to_i
         elsif h["S.BBET"]
           h["S.BBET"].to_i*vwaps["S.BBET"]["1d"]["avg"].to_i
+        elsif h["S.MG"]
+          h["S.MG"].to_i*vwaps["S.MG"]["1d"]["avg"].to_i
         else
           0
         end

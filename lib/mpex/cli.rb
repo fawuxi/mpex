@@ -1,5 +1,6 @@
 require 'cri'
 require 'json'
+require 'highline/import'
 
 module Mpex::CLI
 
@@ -48,8 +49,8 @@ Mpex::Mpex.new.create_configfile_unless_exists # makes sure config file is prese
 
   run do |opts, args|
     mpex = Mpex::Mpex.new
-    mpex.send_plain('STATJSON', opts) do |answer|
-      puts mpex.format_stat(JSON.parse(answer))
+    mpex.statjson(opts) do |stat|
+      puts mpex.format_stat(stat)
     end
   end
 end
@@ -62,7 +63,7 @@ end
 
   run do |opts, args|
     mpex = Mpex::Mpex.new
-    mpex.send_plain('STATJSON', opts) do |answer|
+    mpex.statjson(opts, false) do |answer|
       puts answer
     end
   end
@@ -160,7 +161,7 @@ end
   usage "withdraw [options] [address] [amount in satoshi]"
 
   run do |opts, args|
-    puts .run('help'); exit 0 unless args.length == 2
+    #puts .run('help'); exit 0 unless args.length == 2
     mpex = Mpex::Mpex.new
     order_string = "WITHDRAW|#{args[0]}|#{args[1]}"
     mpex.send_plain(order_string, opts) do |answer|
@@ -176,8 +177,8 @@ end
 
   run do |opts, args|
     mpex = Mpex::Mpex.new
-    mpex.send_plain('STATJSON', opts) do |stat|
-      mpex.portfolio(opts, JSON.parse(stat)) do |portfolio|
+    mpex.statjson(opts) do |stat|
+      mpex.portfolio(opts, stat) do |portfolio|
         puts portfolio
       end if stat
     end

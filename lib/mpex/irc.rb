@@ -14,7 +14,7 @@ module Mpex
       @irc = Net::YAIL.new(
         :address    => 'irc.freenode.net',
         :username   => 'mp_rb_client',
-        :realname   => 'mpex ruby irc client',
+        :realname   => 'MPEx.rb irc client',
         :nicknames  => ["mp_rb_client#{Random.rand(42..4096)}", "mp_rb_client#{Random.rand(42..4096)}"]
       )
       log = Logger.new(STDOUT)
