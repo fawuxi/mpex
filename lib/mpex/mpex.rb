@@ -192,7 +192,19 @@ STAT
           order[order.keys.first]["Price"].to_i * order[order.keys.first]["Quantity"].to_i
         elsif order[order.keys.first]["BS"] == "S"
           mpsic = order[order.keys.first]["MPSIC"]
-          vwaps[mpsic] ? vwaps[mpsic]["1d"]["max"].to_i * order[order.keys.first]["Quantity"].to_i : 0
+          if vwaps[mpsic]
+            avg_price = 0
+            if vwaps[mpsic]["1d"]["avg"].to_i > 0
+              avg_price = vwaps[mpsic]["1d"]["avg"].to_i
+            elsif vwaps[mpsic]["7d"]["avg"].to_i > 0
+              avg_price = vwaps[mpsic]["7d"]["avg"].to_i
+            elsif vwaps[mpsic]["30d"]["avg"].to_i > 0
+              avg_price = vwaps[mpsic]["30d"]["avg"].to_i
+            end
+            avg_price * order[order.keys.first]["Quantity"].to_i
+          else
+            0
+          end
         else
           0
         end
@@ -311,18 +323,21 @@ Holdings including those stuck in open orders:
     end
 
     def holdings_avg_value(stat, vwaps)
-      # TODO improve!
       holdings_value = stat["Holdings"].map do |h|
+        mpsic = h.keys.first
         if h["CxBTC"]
           h["CxBTC"].to_i
-        elsif h["S.MPOE"]
-          h["S.MPOE"].to_i*vwaps["S.MPOE"]["1d"]["avg"].to_i
-        elsif h["S.DICE"]
-          h["S.DICE"].to_i*vwaps["S.DICE"]["1d"]["avg"].to_i
-        elsif h["S.BBET"]
-          h["S.BBET"].to_i*vwaps["S.BBET"]["1d"]["avg"].to_i
-        elsif h["S.MG"]
-          h["S.MG"].to_i*vwaps["S.MG"]["1d"]["avg"].to_i
+        elsif h[mpsic] && vwaps[mpsic]
+          amount = h[mpsic].to_i
+          avg_price = 0
+          if vwaps[mpsic]["1d"]["avg"].to_i > 0
+            avg_price = vwaps[mpsic]["1d"]["avg"].to_i
+          elsif vwaps[mpsic]["7d"]["avg"].to_i > 0
+            avg_price = vwaps[mpsic]["7d"]["avg"].to_i
+          elsif vwaps[mpsic]["30d"]["avg"].to_i > 0
+            avg_price = vwaps[mpsic]["30d"]["avg"].to_i
+          end
+          amount * avg_price
         else
           0
         end
