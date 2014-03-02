@@ -75,9 +75,11 @@ end
   summary "send string as is signed/encrypted to MPEx"
 
   run do |opts, args|
-    mpex = Mpex::Mpex.new
-    mpex.send_plain(args[0], opts) do |answer|
-      puts answer
+    if agree("Send " + args[0] + " to MPEx? [y/n]")
+      mpex = Mpex::Mpex.new
+      mpex.send_plain(args[0], opts) do |answer|
+        puts answer
+      end
     end
   end
 end
@@ -98,8 +100,10 @@ end
     end
     say "<%= color('Buy #{amount} #{mpsic} @ #{Mpex::Converter.satoshi_to_btc(price.to_i)} BTC = #{Mpex::Converter.satoshi_to_btc(amount.to_i*price.to_i)} total BTC', :bold) %>"
     order_string = "BUY|#{mpsic}|#{amount}|#{price}"
-    mpex.send_plain(order_string, opts) do |answer|
-      puts answer
+    if agree("Send " + order_string + " to MPEx? [y/n]")
+      mpex.send_plain(order_string, opts) do |answer|
+        puts answer
+      end
     end
   end
 end
@@ -120,8 +124,10 @@ end
     end
     say "<%= color('Sell #{amount} #{mpsic} @ #{Mpex::Converter.satoshi_to_btc(price.to_i)} BTC = #{Mpex::Converter.satoshi_to_btc(amount.to_i*price.to_i)} total BTC', :bold) %>"
     order_string = "SELL|#{mpsic}|#{amount}|#{price}"
-    mpex.send_plain(order_string, opts) do |answer|
-      puts answer
+    if agree("Send " + order_string + " to MPEx? [y/n]")
+      mpex.send_plain(order_string, opts) do |answer|
+        puts answer
+      end
     end
   end
 end
@@ -134,8 +140,10 @@ end
   run do |opts, args|
     mpex = Mpex::Mpex.new
     order_string = "CANCEL|#{args[0]}"
-    mpex.send_plain(order_string, opts) do |answer|
-      puts answer
+    if agree("Send " + order_string + " to MPEx? [y/n]")
+      mpex.send_plain(order_string, opts) do |answer|
+        puts answer
+      end
     end
   end
 end
@@ -148,8 +156,10 @@ end
   run do |opts, args|
     mpex = Mpex::Mpex.new
     order_string = "DEPOSIT|#{args[0]}"
-    mpex.send_plain(order_string, opts) do |answer|
-      puts answer
+    if agree("Send " + order_string + " to MPEx? [y/n]")
+      mpex.send_plain(order_string, opts) do |answer|
+        puts answer
+      end
     end
   end
 end
@@ -163,8 +173,10 @@ end
     #puts .run('help'); exit 0 unless args.length == 2
     mpex = Mpex::Mpex.new
     order_string = "WITHDRAW|#{args[0]}|#{args[1]}"
-    mpex.send_plain(order_string, opts) do |answer|
-      puts answer
+    if agree("Send " + order_string + " to MPEx? [y/n]")
+      mpex.send_plain(order_string, opts) do |answer|
+        puts answer
+      end
     end
   end
 end
