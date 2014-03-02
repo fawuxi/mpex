@@ -17,6 +17,10 @@ If you want to use MPEx via IRC, use the interactive mode:
 
   * mpex -i
 
+## Config
+
+After you run the "mpex" cli once a config file is created in $HOME/.mpex/config where you can edit default keys etc.
+
 ## License
 
 Copyright (c) 2013 Fa Wuxi
