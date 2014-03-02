@@ -30,7 +30,7 @@ module Mpex
     end
 
     def sign(msg, opts)
-      signed_message = @crypto.sign(msg, :signer => opts[:keyid], :password => opts[:password], :mode => GPGME::SIG_MODE_CLEAR)
+      signed_message = @crypto.sign(msg, { :signer => opts[:keyid], :passphrase_callback => method(:passphrase_callback), :mode => GPGME::SIG_MODE_CLEAR } )
 
       verify(signed_message)
       signed_message.to_s
@@ -54,7 +54,8 @@ module Mpex
     end
 
     def decrypt(encrypted_data, opts)
-      decrypted = @crypto.decrypt(encrypted_data, :password => opts[:password]) do |signature|
+      return encrypted_data unless (encrypted_data.start_with?("-----BEGIN PGP MESSAGE-----"))
+      decrypted = @crypto.decrypt(encrypted_data, { :passphrase_callback => method(:passphrase_callback) }) do |signature|
         raise "Signature could not be verified" unless signature.valid?
       end
       decrypted.to_s
@@ -64,7 +65,7 @@ module Mpex
 
       puts "Sending order to MPEX: #{cleartext_command}"
 
-      opts = verify_opts_present(opts, [ :url, :keyid, :mpexkeyid, :password ])
+      opts = verify_opts_present(opts, [ :url, :keyid, :mpexkeyid ])
 
       signed_msg = sign(cleartext_command, opts)
       say("<%= color('Track-ID: #{track_id(signed_msg)}', :blue) %>")
@@ -263,7 +264,7 @@ STAT
 
       return unless stat
 
-      opts = verify_opts_present(opts, [ :url, :keyid, :mpexkeyid, :password ])
+      opts = verify_opts_present(opts, [ :url, :keyid, :mpexkeyid ])
 
       fetch_mpex_vwaps(opts[:url]) do |vwaps|
         return unless vwaps
@@ -350,9 +351,6 @@ Holdings including those stuck in open orders:
         unless opts[r_opt]
           if config_opts[r_opt.to_s]
             opts[r_opt] = config_opts[r_opt.to_s]
-          elsif r_opt == :password
-            opts[:password] = ask("Enter Passphrase: "){|q| q.echo = false}
-            puts
           else
             $stderr.puts "--#{r_opt} option is required"
             exit 1
@@ -360,6 +358,21 @@ Holdings including those stuck in open orders:
         end
       end
       opts
+    end
+
+    def passphrase_callback(hook, uid_hint, passphrase_info, prev_was_bad, fd)
+      $stderr.write("Passphrase for #{uid_hint}: ")
+      $stderr.flush
+      begin
+        system('stty -echo')
+        io = IO.for_fd(fd, 'w')
+        io.puts(ask(''){|q| q.echo = false})
+        io.flush
+      ensure
+        (0 ... $_.length).each do |i| $_[i] = ?0 end if $_
+        system('stty echo')
+      end
+      $stderr.puts
     end
 
     def read_config

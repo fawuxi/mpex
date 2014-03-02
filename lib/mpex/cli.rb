@@ -21,7 +21,6 @@ module Mpex::CLI
   option :s, :url, 'URL to MPEx (defaults to http://mpex.co)'
   option :u, :keyid, 'key id of your gnupg key to use'
   option :m, :mpexkeyid, 'MPEx public key id (see FAQ#8)'
-  option :p, :password, 'passphrase of your private key (unless provided you\'ll be asked for it)'
 
   option "0", :isinteractive, "internal flag set automatically in interactive mode"
 
