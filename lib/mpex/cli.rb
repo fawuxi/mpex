@@ -182,6 +182,24 @@ end
 end
 
 @cmd.define_command do
+  name 'push'
+  aliases :PUSH
+  usage "push [options] [MPSIC] [40 char key fingerprint] [qty]"
+
+  run do |opts, args|
+    #puts .run('help'); exit 0 unless args.length == 2
+    mpex = Mpex::Mpex.new
+    order_string = "PUSH|#{args[0]}|#{args[1]}|#{args[2]}"
+    puts "Read FAQ: 'PUSH|{MPSIC}|{40 char key fingerprint}|{qty}, which allows you to push an asset (including BTC) to another account on MPEx. This is free of charge but it does not check if the keyid exists so please, for the love of all that is holy, make sure you don't send your stocks to limbo.'"
+    if agree("Send " + order_string + " to MPEx? [y/n]")
+      mpex.send_plain(order_string, opts) do |answer|
+        puts answer
+      end
+    end
+  end
+end
+
+@cmd.define_command do
   name 'portfolio'
   usage 'portfolio [options]'
   summary ""
